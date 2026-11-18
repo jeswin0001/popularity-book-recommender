@@ -9,16 +9,16 @@ books that many people have read and rated highly.
 ## Questions answered
 1. Which books are the most popular?
 2. Why must a book have a minimum number of ratings before it is recommended?
-3. Which authors have the most highly rated books?
+3. Which authors have the most books that qualify as popular?
 4. How are the ratings spread between High, Medium and Low books?
 
 ## Dataset
 Book-Crossing dataset (stored in `data/raw/`):
 
-| File         | Rows      | Main columns                         |
-
-| `Books.csv`  | 271,360   | ISBN, Book-Title, Book-Author |
-| `Ratings.csv`| 1,149,780 | User-ID, ISBN, Book-Rating (0 to 10) |
+| File          | Rows      | Columns                                                                                  |
+|---------------|-----------|------------------------------------------------------------------------------------------|
+| `Books.csv`   | 271,360   | ISBN, Book-Title, Book-Author, Year-Of-Publication, Publisher, Image-URL-S/M/L (8 total) |
+| `Ratings.csv` | 1,149,780 | User-ID, ISBN, Book-Rating (0 to 10)                                                     |
 
 ## Method
 A book is **popular** if it has many ratings **and** a high average rating.
@@ -28,12 +28,16 @@ A book is **popular** if it has many ratings **and** a high average rating.
    - remove duplicate rows (none were found)
    - remove books with a missing title or author (2 books)
    - remove ratings of 0, because 0 means "not rated" (716,109 ratings, about 62%)
-3. **Combine** ratings with book titles using the ISBN.
-4. **Calculate** the number of ratings and the average rating of every book.
+3. **Combine** ratings with book titles using the ISBN. Ratings whose ISBN is not in
+   `Books.csv` are dropped here, so the per-book counts add up to fewer ratings (383,840)
+   than remain after cleaning (433,671).
+4. **Calculate** the number of ratings and the average rating of every book. Books are
+   grouped by title, so different editions of the same title are counted as one book.
 5. **Create a new column**, `Rating_Level`: High (average 8 or more), Medium (6 to 8) or Low (below 6), using NumPy's `np.select`.
 6. **Filter** out books with fewer than the minimum number of ratings (default 50),
    so a book with a single 10-star rating does not rank first.
-7. **Sort** the remaining books by average rating.
+7. **Sort** the remaining books by average rating. The number of ratings only acts as a
+   cutoff (step 6); it does not affect the order.
 
 The cleaned book table is saved to `data/processed/popular_books.csv`.
 The raw files are never changed.
@@ -50,7 +54,7 @@ The raw files are never changed.
 cs project final/
 ├── data/
 │   ├── raw/             Books.csv, Ratings.csv (original data)
-│   └── processed/       popular_books.csv (created by the program)
+│   └── processed/       popular_books.csv (created, and overwritten, each time the program runs)
 ├── project_code.py      the program
 ├── requirements.txt     libraries needed
 ├── .gitignore
@@ -74,8 +78,8 @@ A menu appears:
 ## Sample result (minimum 50 ratings)
 | Rank | Book | Author | Ratings | Average | Level |
 |---|---|---|---|---|---|
-| 1 | The Two Towers (The Lord of the Rings, Part 2) | J.R.R. Tolkien | 136 | 9.33 | High |
-| 2 | The Return of the King (The Lord of the Rings, Part 3) | J.R.R. Tolkien | 103 | 9.21 | High |
+| 1 | The Two Towers (The Lord of the Rings, Part 2) | J.R.R. TOLKIEN | 136 | 9.33 | High |
+| 2 | The Return of the King (The Lord of the Rings, Part 3) | J.R.R. TOLKIEN | 103 | 9.21 | High |
 | 3 | Harry Potter and the Goblet of Fire (Book 4) | J. K. Rowling | 247 | 9.13 | High |
 
 ## Key findings
@@ -96,7 +100,8 @@ A menu appears:
   highest count, but an average of only 4.39. Popularity (many ratings) and quality
   (high average) are different things.
 - **Stephen King is the most represented author,** with 40 books that have 50+ ratings,
-  followed by James Patterson (17) and Nora Roberts (14).
+  followed by James Patterson (17) and Nora Roberts (14). This counts how many popular
+  books an author has, not how highly they are rated.
 
 ## Recommendations
 - Use a minimum of at least 50 ratings before recommending a book.
