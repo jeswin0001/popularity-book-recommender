@@ -8,6 +8,7 @@ Method : a book is popular if it has many ratings AND a high average rating.
 """
 
 import os
+import numpy as np
 import pandas as pd
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,16 +32,6 @@ def inspect_data(books, ratings):
     print(missing[missing > 0].to_string() if missing.sum() > 0 else "  none")
 
     print(f"Rating range: {ratings['Book-Rating'].min()} to {ratings['Book-Rating'].max()}")
-
-
-def rating_level(avg):
-    """Group an average rating into High, Medium or Low."""
-    if avg >= 8:
-        return 'High'
-    elif avg >= 6:
-        return 'Medium'
-    else:
-        return 'Low'
 
 
 def clean_data(books, ratings):
@@ -94,7 +85,10 @@ def load_data():
     popular_df = popular_df[['Book-Title', 'Book-Author', 'num_ratings', 'avg_rating']]
 
     # new column: High (8 and above), Medium (6 to 8) or Low (below 6)
-    popular_df['Rating_Level'] = popular_df['avg_rating'].apply(rating_level)
+    # np.select checks the conditions in order and picks the matching label
+    conditions = [popular_df['avg_rating'] >= 8, popular_df['avg_rating'] >= 6]
+    labels = ['High', 'Medium']
+    popular_df['Rating_Level'] = np.select(conditions, labels, default='Low')
 
     # save the cleaned result so the raw data is never changed
     popular_df.to_csv(os.path.join(PROCESSED_DIR, 'popular_books.csv'), index=False)
@@ -127,6 +121,31 @@ def show_books(df):
         rank = rank + 1
 
 
+def show_statistics(popular_df, min_ratings):
+    """Use NumPy to show how the average ratings are spread."""
+    qualified = popular_df[popular_df['num_ratings'] >= min_ratings]
+    if qualified.empty:
+        print("\nNo books found. Try a lower minimum ratings value.")
+        return
+
+    # convert the column to a NumPy array so NumPy functions can be used
+    avg = qualified['avg_rating'].to_numpy()
+    q1, q2, q3 = np.percentile(avg, [25, 50, 75])
+
+    print(f"\n--- Rating Statistics (books with at least {min_ratings} ratings) ---")
+    print(f"Number of books    : {len(avg)}")
+    print(f"Mean rating        : {np.mean(avg):.2f}")
+    print(f"Median rating      : {np.median(avg):.2f}")
+    print(f"Standard deviation : {np.std(avg):.2f}")
+    print(f"Lowest / Highest   : {np.min(avg):.2f} / {np.max(avg):.2f}")
+    print(f"25% / 50% / 75%    : {q1:.2f} / {q2:.2f} / {q3:.2f}")
+
+    print("Books in each level:")
+    for level in ['High', 'Medium', 'Low']:
+        count = int(np.sum(qualified['Rating_Level'].to_numpy() == level))
+        print(f"  {level:<7}: {count}")
+
+
 def ask_number(message, default):
     """Ask the user for a number. Use the default if the input is not valid."""
     text = input(message).strip()
@@ -146,8 +165,9 @@ def main():
         print("1. Show top popular books")
         print("2. Show top books by an author")
         print(f"3. Change minimum ratings (currently {min_ratings})")
-        print("4. Exit")
-        choice = input("Enter your choice (1-4): ").strip()
+        print("4. Show rating statistics")
+        print("5. Exit")
+        choice = input("Enter your choice (1-5): ").strip()
 
         if choice == '1':
             n = ask_number("How many books do you want? ", 10)
@@ -166,11 +186,13 @@ def main():
             print(f"Minimum ratings set to {min_ratings}.")
 
         elif choice == '4':
+            show_statistics(popular_df, min_ratings)
+
+        elif choice == '5':
             print("Goodbye!")
             break
 
         else:
-            print("Invalid choice, please enter 1, 2, 3 or 4.")
-
+            print("Invalid choice, please enter 1, 2, 3, 4 or 5.")
 
 main()

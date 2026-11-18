@@ -15,10 +15,10 @@ books that many people have read and rated highly.
 ## Dataset
 Book-Crossing dataset (stored in `data/raw/`):
 
-| File | Rows | Main columns |
-|---|---|---|
-| `Books.csv` | 271,360 | ISBN, Book-Title, Book-Author |
-| `Ratings.csv` | 1,149,780 | User-ID, ISBN, Book-Rating (0 to 10) |
+| File         | Rows      | Main columns                         |
+
+| `Books.csv`  | 271,360   | ISBN, Book-Title, Book-Author |
+| `Ratings.csv`| 1,149,780 | User-ID, ISBN, Book-Rating (0 to 10) |
 
 ## Method
 A book is **popular** if it has many ratings **and** a high average rating.
@@ -30,7 +30,7 @@ A book is **popular** if it has many ratings **and** a high average rating.
    - remove ratings of 0, because 0 means "not rated" (716,109 ratings, about 62%)
 3. **Combine** ratings with book titles using the ISBN.
 4. **Calculate** the number of ratings and the average rating of every book.
-5. **Create a new column**, `Rating_Level`: High (average 8 or more), Medium (6 to 8) or Low (below 6).
+5. **Create a new column**, `Rating_Level`: High (average 8 or more), Medium (6 to 8) or Low (below 6), using NumPy's `np.select`.
 6. **Filter** out books with fewer than the minimum number of ratings (default 50),
    so a book with a single 10-star rating does not rank first.
 7. **Sort** the remaining books by average rating.
@@ -42,6 +42,7 @@ The raw files are never changed.
 - Show the top N popular books
 - Show the top books by an author (partial names work, upper or lower case)
 - Change the minimum number of ratings
+- Show rating statistics (mean, median, standard deviation and percentiles) calculated with NumPy
 - Input checking, so wrong input does not crash the program
 
 ## Project structure
@@ -66,7 +67,8 @@ A menu appears:
 1. Show top popular books
 2. Show top books by an author
 3. Change minimum ratings (currently 50)
-4. Exit
+4. Show rating statistics
+5. Exit
 ```
 
 ## Sample result (minimum 50 ratings)
@@ -113,7 +115,7 @@ A menu appears:
 - Build a web interface.
 
 ## Tools
-Python 3 · pandas
+Python 3 · pandas (loading, cleaning, merging, grouping) · NumPy (rating levels and statistics)
 
 ## Author
 Jeswin Mammen Jacob
